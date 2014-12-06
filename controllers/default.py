@@ -26,6 +26,8 @@ def placeOrder():
     return locals()
     
 def addItem():
+    #Add code to add stuff to the database!
+    #thisshitseasy!
     s = request.vars.msg or ''
     return response.json(dict(result=s.upper()))
 
