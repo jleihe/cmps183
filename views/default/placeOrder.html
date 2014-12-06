@@ -1,0 +1,50 @@
+{{extend 'layout.html'}}
+
+<head>
+    <style>
+    #additem {
+      vertical-align: top;
+    }
+    </style>
+
+<script>
+    $(document).ready(function() {
+      $("#addItemBtn").click(function() {
+	    var newitem = $("#newItem").val();  	
+	    // Sends this to the server.
+	    // 'msg' is the name of the variable being sent.
+	    // I encode the payload in json. 
+	    var msg = "msg=" + JSON.stringify(newitem);
+	    $.post('{{=post_url}}', msg, function(jdata) {
+		    var data = JSON.parse(jdata);
+		    newitem += "(" + data["result"] + ")";
+		    var encodeditem = $('<div/>').text(newitem).html();
+		    var newdiv = $("<div>");
+		    newdiv.html(encodeditem);
+		    $("#newItem").val("");
+		    $("#myList").append(newdiv);
+	    });
+      });
+
+    });
+</script>
+</head>
+
+<div class='well'>
+    <h3>New order for <em>{{=auth.user.first_name}} {{=auth.user.last_name}}</em></h3>
+    <b>Date: </b>{{=datime}}
+    <h4>Order Total: </b><em><span id='order_total'>{{=amount}}</span></h4>
+    <br />
+    <h4>Line Items:</h4>
+    <table>
+        <th>Product</th> <th>Quantity</th> <th>Price</th> <th>Line Total</th>
+        <div id="productList"></div>
+    </table>
+    <br >
+    <h2>Your order!</h2>
+    <h4>Add items to your order by clicking [Add]</h4>
+    <div id="myList"></div>
+    <input id="newItem" type="text" class="text"/>
+    <button id="addItemBtn" class="btn">Add</button><br />
+    <button id="placeOrder" class="btn">Place Order</button>
+</div>
