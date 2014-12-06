@@ -19,15 +19,17 @@ def placeOrder():
     datime = request.now
     amount = 0
     post_url = URL('addItem')
-    orderId = db.purchases.insert(customerID=userid, 
+    purchaseId = db.purchases.insert(customerID=userid, 
 	datePurchased=datime,total=amount)
 	
-    itemform = SQLFORM(db.itemsBought)
+    form = SQLFORM(db.itemsBought, 
+	submit_button='d',
+	buttons=[TAG.button('add', 
+	_id="addItem", _action="")])
     return locals()
     
 def addItem():
     #Add code to add stuff to the database!
-    #thisshitseasy!
     s = request.vars.msg or ''
     return response.json(dict(result=s.upper()))
 

@@ -1,5 +1,5 @@
 (dp1
-S'id'
+S'customerid'
 p2
 (dp3
 S'length'
@@ -10,17 +10,17 @@ p5
 I00
 sS'sortable'
 p6
-I1
+I2
 sS'sql'
 p7
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'INTEGER'
 p8
 sS'notnull'
 p9
 I00
 sS'type'
 p10
-S'id'
+S'integer'
 p11
 ssS'total'
 p12
@@ -39,7 +39,7 @@ I00
 sg10
 S'double'
 p15
-ssS'customerid'
+ssS'id'
 p16
 (dp17
 g4
@@ -47,14 +47,14 @@ I512
 sg5
 I00
 sg6
-I2
+I1
 sg7
-S'INTEGER'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p18
 sg9
 I00
 sg10
-S'integer'
+S'id'
 p19
 ssS'datepurchased'
 p20
