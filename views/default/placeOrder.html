@@ -8,29 +8,51 @@
     </style>
 
 <script>
-    $(document).ready(function() {
-      $("#addItem").click(function() {
-	    var newitem = $("#newItem").val();  	
-	    var purchaseID = {{=purchaseId}};
-	    var price = $("#itemsBought_price");
-	    var quantity = $("#itemsBought_quantity");
-	    var product = $("#itemsBought_product");
-	    // Sends this to the server.
-	    // 'msg' is the name of the variable being sent.
-	    // I encode the payload in json. 
-	    var msg = "msg=" + JSON.stringify(newitem);
-	    $.post('{{=post_url}}', msg, function(jdata) {
-		    var data = JSON.parse(jdata);
-		    newitem += "(" + data["result"] + ")";
-		    var encodeditem = $('<th/>').text(newitem).html();
-		    var newdiv = $("<th>");
-		    newdiv.html(encodeditem);
-		    $("#newItem").val("");
-		    $("#productList").append(newdiv);
-	    });
-      });
+function sendLine(product) {
+    var selProduct = product.value;
+    var priceField = document.getElementById('newLIPrice')
+    
+    var req = new XMLHttpRequest()
+    
+    var params = "product=" + selProduct;
+    
+    ajaxRequest.open("POST", "{{=post_url}}", true);
 
+    //Send the proper header information along with the request
+    ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    ajaxRequest.setRequestHeader("Content-length", params.length);
+    ajaxRequest.setRequestHeader("Connection", "close");
+
+    ajaxRequest.onreadystatechange = function() {//Call a function when the state changes.
+	if(ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+	    alert("Price retrieved is: " + ajaxRequest.responseText);
+	    priceField.value = ajaxRequest.responseText;
+	}
+    }
+    ajaxRequest.send(params);
+}
+
+$(document).ready(function() {
+  $("#addItemBtn").click(function() {
+    var newitem = $("#newItem").val();  	
+    var purchaseID = {{=purchaseId}};
+    var price = $("#itemsBought_price");
+    var quantity = $("#itemsBought_quantity");
+    var product = $("#itemsBought_product");
+    
+    var vars = "msg=" + JSON.stringify(newitem);
+    $.post('{{=post_url}}', vars, function(jdata) {
+	var data = JSON.parse(jdata);
+	newitem += "(" + data["result"] + ")";
+	var encodeditem = $('<th/>').text(newitem).html();
+	var newdiv = $("<th>");
+	newdiv.html(encodeditem);
+	$("#itemsBought_price").val("");
+	$("#productList").append(newdiv);
     });
+  });
+
+});
 </script>
 </head>
 
@@ -50,7 +72,6 @@
     <h4>Add items to your order by clicking [Add]</h4>
     <div id="myList"></div>
     {{=form}}
-    <input id="newItem" type="text" class="text"/>
     <button id="addItemBtn" class="btn">Add</button><br />
     <button id="placeOrder" class="btn">Place Order</button>
 </div>

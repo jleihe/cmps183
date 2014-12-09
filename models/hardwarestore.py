@@ -54,9 +54,10 @@ db.define_table('purchases',
 #Access all items in a purchase by selecting itemsBought for which the
 #purchaseID is a match
 db.define_table('itemsBought',
-    Field('purchaseID', 'integer', requires=(IS_NOT_EMPTY(),
-	IS_IN_DB(db, 'purchases.id'))),
+    Field('purchaseID', 'integer', IS_IN_DB(db, 'purchases.id')),
     Field('price', 'double', requires=IS_NOT_EMPTY()),
     Field('quantity', 'integer', requires=IS_NOT_EMPTY()),
     Field('product', db.product),
     format='%(name)s')
+db.itemsBought.purchaseID.writable = False
+db.itemsBought.purchaseID.readable = False

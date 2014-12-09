@@ -24,8 +24,7 @@ def placeOrder():
 	
     form = SQLFORM(db.itemsBought, 
 	submit_button='d',
-	buttons=[TAG.button('add', 
-	_id="addItem", _action="")])
+	buttons=[])    
     return locals()
     
 def addItem():
