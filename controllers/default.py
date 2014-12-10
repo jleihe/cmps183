@@ -18,19 +18,70 @@ def placeOrder():
     userid = auth.user.id
     datime = request.now
     amount = 0
-    post_url = URL('addItem')
+    get_sendLine_url = URL('sendLine')
+    get_placeOrder_url = URL('placeMyOrder')
     purchaseId = db.purchases.insert(customerID=userid, 
 	datePurchased=datime,total=amount)
 	
     form = SQLFORM(db.itemsBought, 
 	submit_button='d',
-	buttons=[])    
+	buttons=[])
+    get_price_url = URL('get_price')
+    productNames = db().select(db.product.name)  
     return locals()
     
-def addItem():
+def sendLine():
     #Add code to add stuff to the database!
-    s = request.vars.msg or ''
-    return response.json(dict(result=s.upper()))
+    purchase_id = request.vars.id or 2000
+    in_price = request.vars.price or ''
+    in_quant = request.vars.quantity or ''
+    in_product = db(db.product.name == request.vars.product).select()[0] or ''
+    in_quantity = request.vars.quantity or ''
+    
+    try: msg=db.itemsBought.insert(purchaseID=purchase_id, price=in_price,
+	quantity=in_quantity, product=in_product) or "not"
+    except: msg = "ex" + purchase_id
+    else:msg = "else"
+    quant_left = update_inventory(in_product, in_quant)
+    return response.json(quant_left)
+    
+def placeMyOrder():
+    purchase_id = request.vars.id or 2000
+    in_total = request.vars.total or 0
+    
+    purchase = db(db.purchases.id == purchase_id).select()[0]
+    purchase.total = in_total
+    purchase.update_record()
+    
+    redirect(URL('index'))
+    return response.json(dict(my_msg=in_total))
+    
+def get_price():
+    """
+    URI targeted by ajax request to retrieve price for selected product
+    """
+    print("get_price called for: ")
+    productName  = request.vars.product
+    print(productName)
+    # get price from data base
+    price = db(db.product.name == productName).select(db.product.price)[0].price
+    print ("price retrieved from db:")
+    print(price)
+    return (price)
+    
+def update_inventory(product, requestedQu):
+    #productName = request.vars.product
+    #requestedQu = request.vars.quantity
+    
+    inventoryLeft = product.inStock - int(requestedQu)
+    if inventoryLeft >= 0:
+        # enough inventory 
+        # update DAL object productInventory
+        product.inStock = inventoryLeft
+        # record updated DAL object in db
+        product.update_record()
+    return (inventoryLeft)
+
 
 def user():
     """

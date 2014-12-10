@@ -1,77 +1,201 @@
+<!--
+    Some html and javascript was adapted from the hw3 hints file
+-->
+
 {{extend 'layout.html'}}
-
-<head>
-    <style>
-    #additem {
-      vertical-align: top;
-    }
-    </style>
-
+{{block head}}
 <script>
-function sendLine(product) {
+function getPrice(product) {
     var selProduct = product.value;
     var priceField = document.getElementById('newLIPrice')
     
-    var req = new XMLHttpRequest()
+    var ajaxRequest = new XMLHttpRequest()
     
     var params = "product=" + selProduct;
-    
-    ajaxRequest.open("POST", "{{=post_url}}", true);
-
-    //Send the proper header information along with the request
+    ajaxRequest.open("POST", "{{=get_price_url}}", true);
     ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    ajaxRequest.setRequestHeader("Content-length", params.length);
-    ajaxRequest.setRequestHeader("Connection", "close");
+    //ajaxRequest.setRequestHeader("Content-length", params.length);
+    //ajaxRequest.setRequestHeader("Connection", "close");
 
     ajaxRequest.onreadystatechange = function() {//Call a function when the state changes.
 	if(ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
-	    alert("Price retrieved is: " + ajaxRequest.responseText);
+	    //alert("Price retrieved is: " + ajaxRequest.responseText);
 	    priceField.value = ajaxRequest.responseText;
 	}
     }
     ajaxRequest.send(params);
 }
 
-$(document).ready(function() {
-  $("#addItemBtn").click(function() {
-    var newitem = $("#newItem").val();  	
-    var purchaseID = {{=purchaseId}};
-    var price = $("#itemsBought_price");
-    var quantity = $("#itemsBought_quantity");
-    var product = $("#itemsBought_product");
+function sendLine() {
+    var id = {{=purchaseId}}
+    var price = document.getElementById('newLIPrice').value;
+    var product = document.getElementById('newLIProduct').value;
+    var quantity = document.getElementById('newLIQuantity').value;
     
-    var vars = "msg=" + JSON.stringify(newitem);
-    $.post('{{=post_url}}', vars, function(jdata) {
-	var data = JSON.parse(jdata);
-	newitem += "(" + data["result"] + ")";
-	var encodeditem = $('<th/>').text(newitem).html();
-	var newdiv = $("<th>");
-	newdiv.html(encodeditem);
-	$("#itemsBought_price").val("");
-	$("#productList").append(newdiv);
-    });
-  });
+    var ajaxRequest = new XMLHttpRequest()
+    
+    var params = "id=" + id + "&price=" + price + 
+	"&product=" + product + "&quantity=" + quantity;
+    ajaxRequest.open("POST", "{{=get_sendLine_url}}", true);
+    ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
-});
+    ajaxRequest.onreadystatechange = function() {
+	if(ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+	    ajaxResponse = ajaxRequest.responseText
+	    if (ajaxResponse < 0) {
+		// alert customer if line item quantity exceeds inventory
+		alert("Only " + (quantity*1 + ajaxResponse*1) + " " + product +
+		    "(s) left in stock. Please limit your order accordingly.")
+	    }
+	    return ajaxResponse;
+	}
+    }
+    ajaxRequest.send(params);
+}
+
+function getLineTotal() {
+    var lineTotalField = document.getElementById('newLITotal');
+    var quantity = document.getElementById('newLIQuantity').value;
+    var price = document.getElementById('newLIPrice').value;
+    var lineTotalOld = lineTotalField.value
+    var lineTotalNew = quantity * price
+    // update Line Total
+    lineTotalField.value = lineTotalNew;
+
+    // update Grand Total
+    var orderTotalNode = document.getElementById('order_total');
+    var orderTotalOld = orderTotalNode.innerHTML
+    var orderTotalNew = orderTotalOld - lineTotalOld + lineTotalNew;
+    orderTotalNode.innerHTML = orderTotalNew;
+}
+
+function addLineItem() {
+    var productInput = document.getElementById('newLIProduct');
+    var quantityInput = document.getElementById('newLIQuantity');
+    var priceInput = document.getElementById('newLIPrice');
+    var linetotalInput = document.getElementById('newLITotal');
+    var product = productInput.value
+    var quantity = quantityInput.value
+    var price   = priceInput.value
+    var linetotal = linetotalInput.value
+
+    if (product == "None" || quantity <= 0 || price <= 0 || quantity * price != linetotal)
+	{ alert("Invalid input.  Please try again!")
+	    document.getElementById('order_total').innerHTML -= linetotal
+	    document.getElementById("newitemform").reset();
+	    return false
+	}
+
+    // ... here goes check for sufficient inventory via Ajax ... 
+    
+    //Update database with new item and check that enough items exist
+    result = sendLine();
+    if (result > 0 || typeof result == 'undefined') {
+	var liTable = document.getElementById('lineitems');
+	var length = liTable.rows.length;
+	
+	var row = liTable.insertRow(length);
+	
+	var productCell = row.insertCell(0); productCell.className="product";
+	var quantityCell = row.insertCell(1); quantityCell.className="quantity";
+	var priceCell = row.insertCell(2); priceCell.className="price";
+	var linetotalCell = row.insertCell(3); linetotalCell.className="linetotal";
+
+	productCell.innerHTML = product;
+	quantityCell.innerHTML = quantity;
+	priceCell.innerHTML = price;
+	linetotalCell.innerHTML = linetotal;
+    }
+    //clear input cells
+    document.getElementById("newitemform").reset();
+}
+
+function placeOrder() {
+    var id = {{=purchaseId}}
+    var total = document.getElementById('order_total').innerHTML;
+    
+    var ajaxRequest = new XMLHttpRequest()
+    
+    var params = "id=" + id + "&total=" + total;
+    ajaxRequest.open("POST", "{{=get_placeOrder_url}}", true);
+    ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+    ajaxRequest.onreadystatechange = function() {
+	if(ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+	    alert("Your Order Has Been Placed!");
+	}
+    }
+    ajaxRequest.send(params);
+    
+}
 </script>
-</head>
 
-<div class='well'>
-    <h3>New order for <em>{{=auth.user.first_name}} {{=auth.user.last_name}}</em></h3>
+<style>
+    .product {text-transform: capitalize; width: 150px;} 
+    .quantity {text-align: right; width: 50px}
+    .price {text-align: right; width: 70px}
+    .linetotal {text-align: right; width: 80px}
+    #additem {vertical-align: top;}
+</style>
+{{end}}
+
+<div class="well">
+    <h3><em>New order</em></h3>
+    <br/>
     <b>Date: </b>{{=datime}}
-    <h4>Order Total: </b><em><span id='order_total'>{{=amount}}</span></h4>
-    <br />
-    <h4>Shopping Cart:</h4>
+    <br/><br/>
+    <h4>Order Total: </b><em><span id='order_total'>{{=amount}}</span></em></h4>
+</div>
+
+<div class="well">
+    <h4>Line Items:</h4>
+    <table id="lineitems">
+	<!-- table headers -->
+	<th class="product">Product</th> 
+	<th class="quantity">Quantity</th> 
+	<th class="price">Price</th> 
+	<th class="linetotal">Line Total</th>
+	<!-- ... this is where the line items are inserted 
+	     by function addLineItem ...   -->
+    </table>
+</div>
+<br/>
+
+<div class="well">
     <table>
-        <th>Product</th> <th>Quantity</th> <th>Price</th> <th>Line Total</th>
+	<form id="newitemform">
+	    <tr>
+		<td>
+		    <select name="product" 
+			id="newLIProduct"
+			class="product"
+			onchange="getPrice(this)">
+			<option value="None">Select product</option>
+			<!-- Generate menu with product names   -->
+			{{for pn in productNames:}}
+			<option value="{{=pn.name}}">{{=pn.name}}</option>
+			{{pass}}
+		    </select>
+		</td>
+	    <td><input type="number" name="quantity"
+			id="newLIQuantity"
+			class="quantity"
+			onchange="getLineTotal()" /></td>
+	    <td><input type="string" name="price"
+			id="newLIPrice"
+			readonly="readonly"
+			class="price"/></td>
+	    <td><input type="string" name="line_total" 
+			id="newLITotal"
+			readonly="readonly"
+			class="linetotal"/></td>
+	    </tr>
+	    <tr><td colspan="4"><input type="button" value="Add Item" 
+		id="additem" onclick="addLineItem()"/></td>
+	    </tr>
+	    <tr><td colspan="4"><input type="button" value="Place Order" 
+		id="submit" onclick="placeOrder()"/></td>
+	    </tr>
+	</form>
     </table>
-    <table id="productList">
-    </table>
-    
-    <br >
-    <h4>Add items to your order by clicking [Add]</h4>
-    <div id="myList"></div>
-    {{=form}}
-    <button id="addItemBtn" class="btn">Add</button><br />
-    <button id="placeOrder" class="btn">Place Order</button>
 </div>

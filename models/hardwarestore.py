@@ -59,5 +59,3 @@ db.define_table('itemsBought',
     Field('quantity', 'integer', requires=IS_NOT_EMPTY()),
     Field('product', db.product),
     format='%(name)s')
-db.itemsBought.purchaseID.writable = False
-db.itemsBought.purchaseID.readable = False
